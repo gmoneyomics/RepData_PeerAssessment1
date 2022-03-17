@@ -1,0 +1,102 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading and preprocessing the data
+
+First load the data 
+
+```{r load, echo=TRUE}
+library(tidyverse)
+df <- read_csv("activity.csv")
+```
+
+## What is mean total number of steps taken per day?
+
+```{r mean_steps, echo=TRUE}
+
+# find the mean steps in each day
+mean_steps <- df %>%
+  group_by(date) %>%
+  summarize(mean_steps=mean(steps))
+
+ggplot(mean_steps, aes(mean_steps))+geom_histogram()+labs(x="Mean number of steps per day")+theme_bw()
+
+# find the median steps in each day
+
+med_steps <- df %>%
+  group_by(date) %>%
+  summarize(Median=median(steps), Mean=mean(steps)) 
+
+print(med_steps)
+
+mean(med_steps$Mean, na.rm=T)
+median(med_steps$Median, na.rm=T)
+```
+
+## What is the average daily activity pattern?
+
+Make a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+
+
+```{r time_plot, echo=TRUE}
+time <- df %>%
+  na.omit() %>%
+  group_by(interval) %>%
+  summarise(mean=mean(steps))
+
+ggplot(time, aes(x=interval, y=mean))+geom_line()+labs(x="Time Interval", y= "Average steps")+theme_bw()
+```
+
+## Imputing missing values
+
+
+```{r df2, echo=TRUE}
+df2 <- df %>%
+  group_by(interval) %>%
+  mutate(steps = ifelse(is.na(steps), mean(steps,na.rm = T), steps))
+
+
+# find the mean steps in each day
+mean_steps2 <- df2 %>%
+  group_by(date) %>%
+  summarize(mean_steps=mean(steps))
+
+ggplot(mean_steps2, aes(mean_steps))+geom_histogram()+labs(x="Mean number of steps per day")+theme_bw()
+
+# find the median steps in each day
+
+med_steps2 <- df2 %>%
+  group_by(date) %>%
+  summarize(Median=median(steps), Mean=mean(steps)) 
+
+print(med_steps2)
+
+mean(med_steps2$Mean, na.rm=T)
+median(med_steps2$Median, na.rm=T)
+```
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+```{r weekends, echo=TRUE}
+
+df3 <- df %>%
+  mutate(day = weekdays(date)) %>%
+  mutate(which = ifelse(day %in% c("Saurday", "Sunday"), "Weekend", "Weekday")) %>%
+  na.omit() %>%
+  group_by(which,interval) %>%
+  summarise(mean=mean(steps))
+
+ggplot(df3, aes(x=interval, y=mean))+geom_line()+facet_wrap(~which, ncol=1)+theme_bw()+labs(x="Time interval", y= "mean steps")
+```
